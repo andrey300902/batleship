@@ -178,9 +178,33 @@ def imported():
         text.render(screen)
         pygame.display.flip()
 
+def helping():
+    screen.fill((0, 0, 255))
+    label1 = Label([0, 105, 950, 35], "Если Вы нажмете кнопку импортировать, вы можете ввести адрес файла готового поля")
+    label2 = Label([0, 150, 950, 40], "Для начала игры нажмите в любую точку на главном экране")
+    label3 = Label([0, 200, 950, 40], "Для расстановки кораблей воспользуйтесь клавишами со стрелками")
+    label4 = Label([0, 250, 950, 40], "Для поворота корабля на 90 градусов нажмите пробел")
+    label5 = Label([0, 300, 950, 40], "Для выстрела нажмите на клетку в поле противника")
+    label6 = Label([0, 350, 950, 40], "Для хода у вас есть 30 секунд")
+    exit = Button([700, 50, 100, 40], "Выход")
+    while True:
+        for event in pygame.event.get():
+            if event.type == pygame.MOUSEBUTTONDOWN:
+                if exit.get_event(event):
+                    return
+        label1.render(screen)
+        label2.render(screen)
+        label3.render(screen)
+        label4.render(screen)
+        label5.render(screen)
+        label6.render(screen)
+        exit.render(screen)
+        pygame.display.flip()
+
 def startBoard():
     pygame.mixer.music.play()
-    button = Button([600, 500, 350, 50], 'Импортировать поле')
+    button_import = Button([600, 500, 350, 50], 'Импортировать поле')
+    button_help = Button([700, 400, 250, 50], 'Помощь')
     image = load_image('start.jpg')
     image = pygame.transform.scale(image, [width, height])
     running = True
@@ -192,15 +216,19 @@ def startBoard():
                 sys.exit()
 
             if event.type == pygame.MOUSEBUTTONDOWN:
-                if button.get_event(event):
+                if button_import.get_event(event):
                     adress1 = imported()
                     adress2 = imported()
                     board1, board2 = Board(adress1), Board(adress2)
-                running = False
-                return board1, board2
+                elif button_help.get_event(event):
+                    helping()
+                else:
+                    running = False
+                    return board1, board2
 
         screen.blit(image, [0, 0])
-        button.render(screen)
+        button_import.render(screen)
+        button_help.render(screen)
         pygame.display.flip()
 
 board1, board2 = startBoard()
@@ -229,6 +257,43 @@ class Ships(pygame.sprite.Sprite):
     def orient(self):
         self.image = pygame.transform.rotate(self.image, 90)
         self.rect.w, self.rect.h = self.rect.h, self.rect.w
+
+def answer():
+    screen.fill((0, 0, 255))
+    ans = Label([200, 300, 300, 50], 'Хотите сохранить поле?')
+    button_no = Button([200, 400, 50, 30], 'Нет')
+    button_yes = Button([350, 400, 50, 30], 'Да')
+    while True:
+        for event in pygame.event.get():
+            if event.type == pygame.MOUSEBUTTONDOWN:
+                if button_no.get_event(event):
+                    return False
+                elif button_yes.get_event(event):
+                    return True
+        ans.render(screen)
+        button_yes.render(screen)
+        button_no.render(screen)
+        pygame.display.flip()
+
+def save_file(adr, board):
+    with open(adr+'.txt', 'w') as file:
+        for i in board.board:
+            file.write(', '.join([str(j) for j in i]) + '\n')
+
+def save_board(board):
+    screen.fill((0, 0, 255))
+    label = Label([100, 100, 400, 50], 'Как Вы хотите назвать файл')
+    text = TextBox([100, 200, 400, 50], '')
+    string = None
+    while True:
+        for event in pygame.event.get():
+            string = text.get_event(event)
+        if string:
+            save_file(string, board)
+            return
+        label.render(screen)
+        text.render(screen)
+        pygame.display.flip()
 
 def make_place():
     running = True
@@ -293,6 +358,8 @@ def make_place():
                     if ships < 20:
                         is_draw = Label([100, 570, 300, 30], 'Не все корабли расставлены', (255, 0, 0), (0, 0, 255))
                     else:
+                        if answer():
+                            save_board(board)
                         is_draw = False
                         if board == board2:
                             return board1, board
